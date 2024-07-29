@@ -34,7 +34,7 @@ To get started with Browsit, follow these steps:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/LocalHost3000/Browsit.git](https://github.com/AaryanAnand10/Browsit.git
+   https://github.com/chaitanyasinghnegi/Browsit.git
    ```
 2. Install the required dependencies:
    ```sh
