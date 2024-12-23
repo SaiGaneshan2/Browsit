@@ -43,4 +43,4 @@ To get started with Browsit, follow these steps:
 3. Run the application:
    ```sh
    python browsit.py
-   ```
+   ```.
