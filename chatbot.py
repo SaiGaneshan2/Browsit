@@ -1,48 +1,58 @@
-import requests
-import json
-import gradio as gr
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+import streamlit as st
 
-url = "http://localhost:11434/api/generate"
+# Download the Falcon3-7B-Instruct model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained("microsoft/DialoGPT-medium")
+model = AutoModelForCausalLM.from_pretrained("microsoft/DialoGPT-medium")
 
-headers = {
-    'Content-Type': 'application/json',
-}
 
-conversation_history = []
+# Initialize chat history (empty at the start)
+if 'chat_history_ids' not in st.session_state:
+    st.session_state.chat_history_ids = torch.tensor([])
 
-def generate_response(prompt):
-    conversation_history.append(prompt)
-    full_prompt = "\n".join(conversation_history)
-    data = {
-        "model": "llama3",
-        "stream": False,
-        "prompt": full_prompt,
-    }
+# Initialize messages list to hold the conversation flow
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
+def get_response(user_input):
+    # Access the global chat history
+    chat_history_ids = st.session_state.chat_history_ids
 
-    if response.status_code == 200:
-        response_text = response.text
-        data = json.loads(response_text)
-        actual_response = data["response"]
-        conversation_history.append(actual_response)
-        return actual_response
-    else:
-        print("Error:", response.status_code, response.text)
-        return None
-css = """
-"/* Hide the original footer elements */
-footer {
-    display:  none !important;
-}"
-"""
-iface = gr.Interface(
-    fn=generate_response,
-    title="AskIt AI",
-    description="An AI-powered conversational assistant built on the robust Llama3 model, brought to you by the innovative team at Browseit. Experience seamless and intelligent interactions like never before.",
-    inputs=gr.Textbox(lines=10, placeholder="Enter your prompt here..."),
-    outputs="text",
-    css=css
-)
+    # Encode the user input
+    new_user_input_ids = tokenizer.encode(user_input + tokenizer.eos_token, return_tensors='pt')
 
-iface.launch(share=True)
+    # Append the new input to the chat history
+    bot_input_ids = torch.cat([chat_history_ids, new_user_input_ids], dim=-1) if chat_history_ids.shape[0] > 0 else new_user_input_ids
+
+    # Generate a response using the model
+    chat_history_ids = model.generate(bot_input_ids, max_length=1000, pad_token_id=tokenizer.eos_token_id)
+
+    # Update chat history in session state
+    st.session_state.chat_history_ids = chat_history_ids
+
+    # Decode and return the response
+    response = tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+    return response
+
+# Streamlit app interface
+st.title("Chatbot")
+st.write("Talk to the bot!")
+
+# Input field for user to type their message
+user_input = st.text_input("You: ")
+
+if user_input:
+    # Store user message in chat history
+    st.session_state.messages.append(f"You: {user_input}")
+
+    # Get response from the model
+    response = get_response(user_input)
+
+    # Store bot response in chat history
+    st.session_state.messages.append(f"Bot: {response}")
+
+# Display chat history continuously
+for message in st.session_state.messages:
+    st.write(message)
+
