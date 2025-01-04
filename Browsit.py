@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 from PyQt6.QtWebEngineWidgets import *
+import subprocess
+import time
 
 class CustomWebEnginePage(QWebEngineView):
     def __init__(self, parent=None):
@@ -286,8 +288,16 @@ class MainWindow(QMainWindow):
     def focus_url_bar(self):
         self.url_bar.setFocus()
 
+
     def open_chatbot(self):
-        chatbot_url = "https://6bd5b0f458be7729a5.gradio.live"
+        # Start Streamlit app in the background
+        subprocess.Popen(["streamlit", "run", "chatbot.py"])
+
+        # Wait a few seconds for Streamlit to start
+        time.sleep(3)
+
+        # Open the URL of the Streamlit app in a new tab
+        chatbot_url = "http://localhost:8501"  # Default Streamlit URL
         self.add_new_tab(chatbot_url)
 
 if __name__ == "__main__":
@@ -297,3 +307,4 @@ if __name__ == "__main__":
     mainWin = MainWindow()
     mainWin.show()
     sys.exit(app.exec())
+
