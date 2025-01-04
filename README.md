@@ -25,6 +25,7 @@ We are open to suggestions and welcome contributions to make Browsit a better br
 - Chaitanya Singh Negi
 - Aaryan Anand
 - Hrishikesh Sarma
+- Sai Ganeshan Manikandan
 
 ---
 
